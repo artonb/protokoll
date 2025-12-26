@@ -1,0 +1,7 @@
+@font-face {
+  font-family: "VW Headline OT";
+  src: url("/fonts/vwheadlineot_black.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
