@@ -1,8 +1,8 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import "./fonts.css";
 import "./index.css";
-import ServiceFormPage from "./pages/ServiceFormPage.tsx";
+import ServiceFormPage from "./pages/ServiceFormPage";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 
 const theme = createTheme({
@@ -14,10 +14,10 @@ const theme = createTheme({
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<ServiceFormPage />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   </ThemeProvider>
 );
