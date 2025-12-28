@@ -19,5 +19,11 @@ export const formStyles = {
     fullWidth: true,
     size: "small" as const,
     variant: "outlined" as const,
+
+    InputProps: {
+      sx: {
+        textTransform: "uppercase",
+      },
+    },
   },
 } as const;

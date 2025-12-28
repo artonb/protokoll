@@ -1,3 +1,15 @@
-body {
-  font-family: "VW Headline OT", Arial, sans-serif;
+@font-face {
+  font-family: "VW Headline Web";
+  src: url("/fonts/vwheadlinebook_black.otf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "VW Headline Web";
+  src: url("/fonts/vwheadlineot_black.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }

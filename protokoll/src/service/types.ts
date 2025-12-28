@@ -27,6 +27,7 @@ export type ExtraWorkAddToSection = {
 export type ExtraWorkOption = {
   id: string;
   label?: string;
+  showOnCertificate?: boolean;
   add?: ExtraWorkAddToSection[];
   sectionId?: string;
   rows?: ServiceRow[];

@@ -68,11 +68,17 @@ export type PdfData = {
   brand: Brand;
   header: HeaderData;
   sections: ServiceSection[];
-  extraWorkLabels?: string[];
+  extraWorkLabels: string[];
   checks: Record<string, CheckState>;
   rowValues: Record<string, string>;
   note?: string;
 };
+
+function formatDateSv(yyyyMmDd: string): string {
+  const [y, m, d] = yyyyMmDd.split("-");
+  if (!y || !m || !d) return yyyyMmDd;
+  return `${d}.${m}.${y}`;
+}
 
 const styles = StyleSheet.create({
   col: { gap: 6 },
@@ -170,7 +176,12 @@ export default function ServicePdfDocument({ data }: { data: PdfData }) {
     <Document>
       <Page
         size="A4"
-        style={{ padding: 24, fontSize: 9.5, fontFamily: "VW Headline OT" }}
+        style={{
+          padding: 24,
+          fontSize: 9.5,
+          fontFamily: "Brand-VW",
+          fontWeight: "bold",
+        }}
       >
         <View
           style={{
@@ -338,7 +349,9 @@ export default function ServicePdfDocument({ data }: { data: PdfData }) {
               <View style={styles.field}>
                 <Text style={styles.label}>Datum</Text>
                 <View style={styles.valueBox}>
-                  <Text style={styles.value}>{h.datum ?? ""}</Text>
+                  <Text style={styles.value}>
+                    {h.datum ? formatDateSv(h.datum) : ""}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -358,31 +371,6 @@ export default function ServicePdfDocument({ data }: { data: PdfData }) {
         >
           {data.serviceTitle}
         </Text>
-
-        {(data.extraWorkLabels?.length ?? 0) > 0 && (
-          <View style={styles.extraBox}>
-            <Text style={styles.extraTitle}>Tilläggsarbeten</Text>
-
-            {data.extraWorkLabels!.map((label, idx) => (
-              <View key={`${idx}-${label}`} style={styles.extraRow}>
-                <Image
-                  src={on}
-                  style={{
-                    width: 10,
-                    height: 10,
-                  }}
-                />
-                <Text
-                  style={{
-                    fontSize: 10.5,
-                  }}
-                >
-                  {label}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
 
         {data.sections.map((section) => (
           <View

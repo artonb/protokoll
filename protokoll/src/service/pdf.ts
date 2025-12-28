@@ -1,4 +1,5 @@
 import { pdf, Document } from "@react-pdf/renderer";
+import type { PdfData } from "../pages/ServicePdfDocument";
 
 export async function downloadPdf(
   document: React.ReactElement<React.ComponentProps<typeof Document>>,
@@ -14,5 +15,18 @@ export async function downloadPdf(
     a.click();
   } finally {
     URL.revokeObjectURL(url);
+  }
+}
+
+export function getBrandFontFamily(brand: PdfData["brand"]) {
+  switch (brand) {
+    case "audi":
+      return "Brand-Audi";
+    case "skoda":
+      return "Brand-Skoda";
+    case "volkswagen":
+    case "seat":
+    default:
+      return "Brand-VW";
   }
 }

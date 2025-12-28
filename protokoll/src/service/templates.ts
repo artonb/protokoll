@@ -2,7 +2,7 @@ import type { Template } from "./types";
 
 export const TEMPLATES: Template[] = [
   {
-    id: "inspection",
+    id: "inspektion",
     name: "Inspektion",
     serviceTitle: "Inspektion",
     sections: [
@@ -277,7 +277,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "change_brake_fluid",
-        label: "Bromssystem: Byt bromsvätska",
+        label: "Bromsvätskeservice",
         add: [
           {
             sectionId: "under_check",
@@ -293,7 +293,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "pollen_filter_menu",
-        label: "Kupefilter/Friskluftsfilter (lukt- och allergifilter)",
+        label: "Friskluftsfilter",
         add: [
           {
             sectionId: "engine_check",
@@ -310,7 +310,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "air_filter_menu",
-        label: "Luftfilter: Rengöra huset och byta filterinsatsen",
+        label: "Luftfilterinsats",
         add: [
           {
             sectionId: "engine_check",
@@ -326,7 +326,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "DSG-menu",
-        label: "Direktväxellåda (DSG): Byta DSG-olja och filter",
+        label: "Växellådsolja",
         add: [
           {
             sectionId: "under_check",
@@ -343,7 +343,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "fuel_filter_menu",
-        label: "Byta dieselbränslefilter",
+        label: "Bränslefilter diesel",
         add: [
           {
             sectionId: "engine_check",
@@ -361,6 +361,7 @@ export const TEMPLATES: Template[] = [
       {
         id: "extra_exterior",
         label: "Panoramatak",
+        showOnCertificate: false,
         sectionId: "exterior_check",
         rows: [
           {
@@ -371,7 +372,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "timing_belt",
-        label: "Kamrem och spännrulle",
+        label: "Kuggrem",
         sectionId: "engine_check",
         rows: [
           {
@@ -383,6 +384,7 @@ export const TEMPLATES: Template[] = [
       {
         id: "DPF_menu",
         label: "Kontrollera dieselpartikelfilter",
+        showOnCertificate: false,
         add: [
           {
             sectionId: "final_check",
@@ -408,7 +410,7 @@ export const TEMPLATES: Template[] = [
   //
 
   {
-    id: "inspektion med oljebyte",
+    id: "inspektion-med-oljebyte",
     name: "Inspektion med oljebyte",
     serviceTitle: "Inspektion med oljebyte (flexibel)",
     sections: [
@@ -691,7 +693,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "change_brake_fluid",
-        label: "Bromssystem: Byt bromsvätska",
+        label: "Bromsvätskeservice",
         add: [
           {
             sectionId: "under_check",
@@ -707,7 +709,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "pollen_filter_menu",
-        label: "Kupefilter/Friskluftsfilter (lukt- och allergifilter)",
+        label: "Friskluftsfilter",
         add: [
           {
             sectionId: "engine_check",
@@ -724,7 +726,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "air_filter_menu",
-        label: "Luftfilter: Rengöra huset och byta filterinsatsen",
+        label: "Luftfilterinsats",
         add: [
           {
             sectionId: "engine_check",
@@ -740,7 +742,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "DSG-menu",
-        label: "Direktväxellåda (DSG): Byta DSG-olja och filter",
+        label: "Växellådsolja",
         add: [
           {
             sectionId: "under_check",
@@ -757,7 +759,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "fuel_filter_menu",
-        label: "Byta dieselbränslefilter",
+        label: "Bränslefilter diesel",
         add: [
           {
             sectionId: "engine_check",
@@ -775,6 +777,7 @@ export const TEMPLATES: Template[] = [
       {
         id: "extra_exterior",
         label: "Panoramatak",
+        showOnCertificate: false,
         sectionId: "exterior_check",
         rows: [
           {
@@ -785,7 +788,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "timing_belt",
-        label: "Kamrem och spännrulle",
+        label: "Kuggrem",
         sectionId: "engine_check",
         rows: [
           {
@@ -797,6 +800,7 @@ export const TEMPLATES: Template[] = [
       {
         id: "DPF_menu",
         label: "Kontrollera dieselpartikelfilter",
+        showOnCertificate: false,
         add: [
           {
             sectionId: "final_check",
@@ -851,7 +855,7 @@ export const TEMPLATES: Template[] = [
     extraWorks: [
       {
         id: "change_brake_fluid",
-        label: "Bromssystem: Byt bromsvätska",
+        label: "Bromsvätskeservice",
         add: [
           {
             sectionId: "under_check",
@@ -868,7 +872,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "pollen_filter_menu",
-        label: "Kupefilter/Friskluftsfilter (lukt- och allergifilter)",
+        label: "Friskluftsfilter",
         add: [
           {
             sectionId: "under_check",
@@ -885,7 +889,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "air_filter_menu",
-        label: "Luftfilter: Rengöra huset och byta filterinsatsen",
+        label: "Luftfilterinsats",
         add: [
           {
             sectionId: "under_check",
@@ -902,7 +906,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "DSG-menu",
-        label: "Direktväxellåda (DSG): Byta DSG-olja och filter",
+        label: "Växellådsolja",
         add: [
           {
             sectionId: "under_check",
@@ -919,7 +923,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "fuel_filter_menu",
-        label: "Byta dieselbränslefilter",
+        label: "Bränslefilter diesel",
         add: [
           {
             sectionId: "under_check",
@@ -1024,7 +1028,7 @@ export const TEMPLATES: Template[] = [
       },
       {
         id: "timing_belt",
-        label: "Kamrem och spännrulle",
+        label: "Kuggrem",
         sectionId: "under_check",
         rows: [
           {
@@ -1036,6 +1040,7 @@ export const TEMPLATES: Template[] = [
       {
         id: "DPF_menu",
         label: "Kontrollera dieselpartikelfilter",
+        showOnCertificate: false,
         add: [
           {
             sectionId: "under_check",

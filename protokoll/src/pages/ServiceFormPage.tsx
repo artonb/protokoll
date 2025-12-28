@@ -18,6 +18,7 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import ServicePdfDocument, { type PdfData } from "./ServicePdfDocument";
+import ServiceCertificatePdfDocument from "./ServiceCertificatePdfDocument";
 import { downloadPdf } from "../service/pdf";
 import ServiceChecklistTable from "../components/ServiceChecklistTable";
 import type { CheckState, HeaderState } from "../service/types";
@@ -28,16 +29,16 @@ import { buildEffectiveSections, allowedRowIds } from "../service/sectionUtils";
 
 const initialHeader: HeaderState = {
   orderNr: "",
-  modellKod: "5G146Y",
+  modellKod: "",
   regNr: "",
-  registrering: "2017-01-03",
-  chassiNr: "WVWZZZAUZHW157321",
-  mmb: "CRLB",
-  matarstallning: "160000",
+  registrering: "",
+  chassiNr: "",
+  mmb: "",
+  matarstallning: "",
   serviceRadgivare: "",
-  modell: "Golf 2.0 HLBM 110fTDID6F",
-  vmb: "SGG",
-  arsmodell: "2017",
+  modell: "",
+  vmb: "",
+  arsmodell: "",
   datum: new Date().toISOString().slice(0, 10),
 };
 
@@ -67,6 +68,25 @@ export default function ServiceFormPage() {
     [templateId]
   );
 
+  const selectedExtraWorkLabels = useMemo(
+    () =>
+      template.extraWorks
+        ?.filter((x) => selectedExtraWorkIds.includes(x.id))
+        .map((x) => x.label)
+        .filter((label): label is string => Boolean(label)) ?? [],
+    [template.extraWorks, selectedExtraWorkIds]
+  );
+
+  const certificateExtraWorkLabels = useMemo(
+    () =>
+      template.extraWorks
+        ?.filter((x) => selectedExtraWorkIds.includes(x.id))
+        .filter((x) => x.showOnCertificate !== false)
+        .map((x) => x.label)
+        .filter((label): label is string => Boolean(label)) ?? [],
+    [template.extraWorks, selectedExtraWorkIds]
+  );
+
   const effectiveSections = useMemo(
     () =>
       buildEffectiveSections(
@@ -81,11 +101,17 @@ export default function ServiceFormPage() {
     const allowed = allowedRowIds(effectiveSections);
 
     setChecks((prev) => {
-      const next: Record<string, CheckState> = {};
-      for (const k of Object.keys(prev)) {
-        if (allowed.has(k)) next[k] = prev[k] ?? null;
+      const nextDefaults = buildDefaultChecks(effectiveSections);
+
+      for (const [id, value] of Object.entries(prev)) {
+        if (allowed.has(id)) nextDefaults[id] = value ?? "ok";
       }
-      return next;
+
+      for (const id of Object.keys(nextDefaults)) {
+        if (!allowed.has(id)) delete nextDefaults[id];
+      }
+
+      return nextDefaults;
     });
 
     setRowValues((prev) => {
@@ -97,12 +123,20 @@ export default function ServiceFormPage() {
     });
   }, [effectiveSections]);
 
+  function buildDefaultChecks(sections: { rows: { id: string }[] }[]) {
+    const next: Record<string, CheckState> = {};
+    for (const s of sections) {
+      for (const r of s.rows) next[r.id] = "ok";
+    }
+    return next;
+  }
+
   useEffect(() => {
     setSelectedExtraWorkIds([]);
     setMaintenanceComment("");
-    setChecks({});
+    setChecks(buildDefaultChecks(template.sections));
     setRowValues({});
-  }, [templateId]);
+  }, [templateId, template.sections]);
 
   const pdfData: PdfData = useMemo(
     () => ({
@@ -111,15 +145,17 @@ export default function ServiceFormPage() {
       brand,
       header: {
         ...header,
-        datum: header.datum ? formatDateSv(header.datum) : "",
+        datum: header.datum ?? "",
       },
-      sections: effectiveSections.map((s) => ({
-        ...s,
-        title: s.title ?? "",
-      })),
+      sections: effectiveSections.map((s) => ({ ...s, title: s.title ?? "" })),
       checks,
       rowValues,
       note: maintenanceComment,
+      extraWorkLabels:
+        template.extraWorks
+          ?.filter((x) => selectedExtraWorkIds.includes(x.id))
+          .map((x) => x.label)
+          .filter((label): label is string => Boolean(label)) ?? [],
     }),
     [
       template.serviceTitle,
@@ -129,6 +165,8 @@ export default function ServiceFormPage() {
       checks,
       rowValues,
       maintenanceComment,
+      template.extraWorks,
+      selectedExtraWorkIds,
     ]
   );
 
@@ -140,7 +178,12 @@ export default function ServiceFormPage() {
       const safeReg = (header.regNr || "service").replace(/\s+/g, "_");
       const safeDate = header.datum || new Date().toISOString().slice(0, 10);
       const filename = `${safeReg}_${template.id}_${safeDate}.pdf`;
-      await downloadPdf(<ServicePdfDocument data={pdfData} />, filename);
+      await downloadPdf(
+        <ServicePdfDocument
+          data={{ ...pdfData, extraWorkLabels: selectedExtraWorkLabels }}
+        />,
+        filename
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -281,9 +324,8 @@ export default function ServiceFormPage() {
                 />
 
                 <Divider />
-
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
+                  direction={{ xs: "column" }}
                   spacing={1}
                   justifyContent="flex-end"
                   alignItems={{ xs: "stretch", sm: "center" }}
@@ -297,6 +339,33 @@ export default function ServiceFormPage() {
                     sx={{ borderRadius: 2 }}
                   >
                     {isDownloading ? "Skapar PDF..." : "Ladda ner PDF"}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    disabled={!canDownload}
+                    onClick={async () => {
+                      const safeReg = (header.regNr || "service").replace(
+                        /\s+/g,
+                        "_"
+                      );
+                      const safeDate =
+                        header.datum || new Date().toISOString().slice(0, 10);
+                      const filename2 = `${safeReg}_${template.id}_${safeDate}_servicebevis.pdf`;
+                      await downloadPdf(
+                        <ServiceCertificatePdfDocument
+                          data={{
+                            ...pdfData,
+                            extraWorkLabels: certificateExtraWorkLabels,
+                          }}
+                        />,
+                        filename2
+                      );
+                    }}
+                    size="large"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Ladda ner Servicebevis
                   </Button>
 
                   {!header.regNr?.trim() && (
@@ -343,10 +412,4 @@ function SectionTitle({
       </Typography>
     </Stack>
   );
-}
-
-function formatDateSv(yyyyMmDd: string): string {
-  const [y, m, d] = yyyyMmDd.split("-");
-  if (!y || !m || !d) return yyyyMmDd;
-  return `${d}.${m}.${y}`;
 }

@@ -8,7 +8,7 @@ import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 
 const theme = createTheme({
   typography: {
-    fontFamily: '"VW Headline OT", Arial, sans-serif',
+    fontFamily: '"VW Headline Web", Arial, sans-serif',
   },
 });
 
