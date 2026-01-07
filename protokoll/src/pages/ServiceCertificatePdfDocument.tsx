@@ -97,6 +97,11 @@ export default function ServiceCertificatePdfDocument({
   const h = data.header;
   const brandFont = getBrandFontFamily(data.brand);
   const extraLabels = data.extraWorkLabels ?? [];
+  const performedBy = data.performedBy ?? {
+    name: "Malmoretrofit AB",
+    address1: "Murmansgatan 122",
+    address2: "212 25 Malmö",
+  };
 
   return (
     <Document>
@@ -172,9 +177,9 @@ export default function ServiceCertificatePdfDocument({
             <View style={styles.footerRow}>
               <Text style={styles.cellLabel}>Utfört av</Text>
               <View style={styles.cellValue}>
-                <Text>Malmoretrofit AB</Text>
-                <Text style={{ marginTop: 6 }}>Murmansgatan 122</Text>
-                <Text style={{ marginTop: 6 }}>212 25 Malmö</Text>
+                <Text>{performedBy.name}</Text>
+                <Text style={{ marginTop: 6 }}>{performedBy.address1}</Text>
+                <Text style={{ marginTop: 6 }}>{performedBy.address2}</Text>
               </View>
             </View>
 

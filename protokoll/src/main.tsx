@@ -5,6 +5,11 @@ import "./index.css";
 import "../src/service/polyfills";
 import ServiceFormPage from "./pages/ServiceFormPage";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
+import { AuthProvider } from "./auth/AuthProvider";
+import ProtocolsListPage from "./pages/ProtocolsListPage";
+import { RequireAuth } from "./auth/RequireAuth";
+import LoginPage from "./pages/LoginPage";
+import AppLayout from "./components/AppLayout";
 
 const theme = createTheme({
   typography: {
@@ -15,10 +20,32 @@ const theme = createTheme({
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<ServiceFormPage />} />
-      </Routes>
-    </HashRouter>
+    <AuthProvider>
+      <HashRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <AppLayout>
+                  <ServiceFormPage />
+                </AppLayout>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/protocols"
+            element={
+              <RequireAuth>
+                <AppLayout>
+                  <ProtocolsListPage />
+                </AppLayout>
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </HashRouter>
+    </AuthProvider>
   </ThemeProvider>
 );

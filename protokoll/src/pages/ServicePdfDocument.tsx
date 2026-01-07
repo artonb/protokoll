@@ -62,6 +62,12 @@ export type ServiceSection = { id: string; title: string; rows: ServiceRow[] };
 
 export type Brand = "volkswagen" | "audi" | "seat" | "skoda";
 
+export type PerformedBy = {
+  name: string;
+  address1: string;
+  address2: string;
+};
+
 export type PdfData = {
   title: string;
   serviceTitle: string;
@@ -72,6 +78,7 @@ export type PdfData = {
   checks: Record<string, CheckState>;
   rowValues: Record<string, string>;
   note?: string;
+  performedBy?: PerformedBy;
 };
 
 function formatDateSv(yyyyMmDd: string): string {

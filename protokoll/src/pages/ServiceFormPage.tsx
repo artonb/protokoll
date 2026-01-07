@@ -13,7 +13,6 @@ import {
   Typography,
   TextField,
 } from "@mui/material";
-import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
@@ -26,6 +25,15 @@ import { TEMPLATES } from "../service/templates";
 import ExtraWorksSelect from "../components/ExtraWorksSelect";
 import VehicleInfoForm from "../components/VehicleInfoForm";
 import { buildEffectiveSections, allowedRowIds } from "../service/sectionUtils";
+import { useAuth } from "../auth/AuthProvider";
+import {
+  normalizeRegNr,
+  upsertServiceEventDocument,
+} from "../service/documentsStore";
+import {
+  getOrCreateOrderNrForServiceEvent,
+  peekNextOrderNrForUser,
+} from "../service/orderNrStore";
 
 const initialHeader: HeaderState = {
   orderNr: "",
@@ -42,6 +50,12 @@ const initialHeader: HeaderState = {
   datum: new Date().toISOString().slice(0, 10),
 };
 
+const DEFAULT_PERFORMED_BY = {
+  name: "Malmoretrofit AB",
+  address1: "Murmansgatan 122",
+  address2: "212 25 Malmö",
+};
+
 type Brand = "volkswagen" | "audi" | "seat" | "skoda";
 
 const BRANDS: { id: Brand; label: string }[] = [
@@ -52,6 +66,7 @@ const BRANDS: { id: Brand; label: string }[] = [
 ];
 
 export default function ServiceFormPage() {
+  const { user } = useAuth();
   const [templateId, setTemplateId] = useState<string>(TEMPLATES[0]!.id);
   const [selectedExtraWorkIds, setSelectedExtraWorkIds] = useState<string[]>(
     []
@@ -62,6 +77,7 @@ export default function ServiceFormPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [maintenanceComment, setMaintenanceComment] = useState<string>("");
   const [brand, setBrand] = useState<Brand>("volkswagen");
+  const [performedBy, setPerformedBy] = useState(DEFAULT_PERFORMED_BY);
 
   const template = useMemo(
     () => TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!,
@@ -86,6 +102,47 @@ export default function ServiceFormPage() {
         .filter((label): label is string => Boolean(label)) ?? [],
     [template.extraWorks, selectedExtraWorkIds]
   );
+
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const next = await peekNextOrderNrForUser(user.uid);
+        if (cancelled) return;
+
+        setHeader((prev) => {
+          if (prev.orderNr?.trim()) return prev;
+          return { ...prev, orderNr: String(next) };
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  async function ensureOrderNrLocked(date: string, regNrNorm: string) {
+    if (!user) throw new Error("Not signed in");
+
+    const nr = await getOrCreateOrderNrForServiceEvent({
+      uid: user.uid,
+      regNrNorm,
+      templateId: template.id,
+      date,
+    });
+
+    const asString = String(nr);
+
+    setHeader((prev) => ({ ...prev, orderNr: asString }));
+
+    return asString;
+  }
 
   const effectiveSections = useMemo(
     () =>
@@ -131,6 +188,20 @@ export default function ServiceFormPage() {
     return next;
   }
 
+  function buildMeta() {
+    const date = header.datum || new Date().toISOString().slice(0, 10);
+    const regNr = header.regNr.trim();
+    const regNrNorm = normalizeRegNr(regNr);
+
+    const safeReg = regNrNorm || "SERVICE";
+    const safeDate = date;
+
+    const protocolFilename = `${safeReg}_${template.id}_${safeDate}.pdf`;
+    const certificateFilename = `${safeReg}_${template.id}_${safeDate}_servicebevis.pdf`;
+
+    return { date, regNr, regNrNorm, protocolFilename, certificateFilename };
+  }
+
   useEffect(() => {
     setSelectedExtraWorkIds([]);
     setMaintenanceComment("");
@@ -151,6 +222,7 @@ export default function ServiceFormPage() {
       checks,
       rowValues,
       note: maintenanceComment,
+      performedBy,
       extraWorkLabels:
         template.extraWorks
           ?.filter((x) => selectedExtraWorkIds.includes(x.id))
@@ -173,17 +245,41 @@ export default function ServiceFormPage() {
   const canDownload = Boolean(header.regNr?.trim()) && !isDownloading;
 
   async function onDownload() {
+    if (!user) return;
+
     try {
       setIsDownloading(true);
-      const safeReg = (header.regNr || "service").replace(/\s+/g, "_");
-      const safeDate = header.datum || new Date().toISOString().slice(0, 10);
-      const filename = `${safeReg}_${template.id}_${safeDate}.pdf`;
+      const { date, regNr, regNrNorm, protocolFilename } = buildMeta();
+
+      const orderNr = await ensureOrderNrLocked(date, regNrNorm);
+      const headerWithOrder = { ...header, orderNr };
+
       await downloadPdf(
         <ServicePdfDocument
-          data={{ ...pdfData, extraWorkLabels: selectedExtraWorkLabels }}
+          data={{
+            ...pdfData,
+            header: { ...pdfData.header, orderNr },
+            extraWorkLabels: selectedExtraWorkLabels,
+          }}
         />,
-        filename
+        protocolFilename
       );
+
+      await upsertServiceEventDocument({
+        uid: user.uid,
+        docType: "protocol",
+        regNr,
+        regNrNorm,
+        templateId: template.id,
+        brand,
+        date,
+        header: headerWithOrder,
+        checks,
+        rowValues,
+        maintenanceComment,
+        selectedExtraWorkIds,
+        performedBy,
+      });
     } finally {
       setIsDownloading(false);
     }
@@ -200,13 +296,6 @@ export default function ServiceFormPage() {
         }}
       >
         <Stack spacing={2.25}>
-          <Stack direction="row" spacing={1.25} alignItems="center">
-            <DescriptionRoundedIcon fontSize="large" />
-            <Typography variant="h4" fontWeight={800}>
-              Serviceprotokoll
-            </Typography>
-          </Stack>
-
           <Card
             elevation={0}
             sx={{
@@ -260,6 +349,47 @@ export default function ServiceFormPage() {
                 />
 
                 <VehicleInfoForm value={header} onChange={setHeader} />
+              </Stack>
+            </CardContent>
+          </Card>
+          <Card
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 3,
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+              <Stack spacing={1.5}>
+                <Typography variant="h5" fontWeight={800}>
+                  Utfört av
+                </Typography>
+
+                <TextField
+                  label="Företag"
+                  value={performedBy.name}
+                  onChange={(e) =>
+                    setPerformedBy((p) => ({ ...p, name: e.target.value }))
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Adress"
+                  value={performedBy.address1}
+                  onChange={(e) =>
+                    setPerformedBy((p) => ({ ...p, address1: e.target.value }))
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Postnummer & Ort"
+                  value={performedBy.address2}
+                  onChange={(e) =>
+                    setPerformedBy((p) => ({ ...p, address2: e.target.value }))
+                  }
+                  fullWidth
+                />
               </Stack>
             </CardContent>
           </Card>
@@ -345,22 +475,43 @@ export default function ServiceFormPage() {
                     variant="outlined"
                     disabled={!canDownload}
                     onClick={async () => {
-                      const safeReg = (header.regNr || "service").replace(
-                        /\s+/g,
-                        "_"
+                      if (!user) return;
+
+                      const { date, regNr, regNrNorm, certificateFilename } =
+                        buildMeta();
+
+                      const orderNr = await ensureOrderNrLocked(
+                        date,
+                        regNrNorm
                       );
-                      const safeDate =
-                        header.datum || new Date().toISOString().slice(0, 10);
-                      const filename2 = `${safeReg}_${template.id}_${safeDate}_servicebevis.pdf`;
+                      const headerWithOrder = { ...header, orderNr };
+
                       await downloadPdf(
                         <ServiceCertificatePdfDocument
                           data={{
                             ...pdfData,
+                            header: { ...pdfData.header, orderNr },
                             extraWorkLabels: certificateExtraWorkLabels,
                           }}
                         />,
-                        filename2
+                        certificateFilename
                       );
+
+                      await upsertServiceEventDocument({
+                        uid: user.uid,
+                        docType: "certificate",
+                        regNr,
+                        regNrNorm,
+                        templateId: template.id,
+                        brand,
+                        date,
+                        header: headerWithOrder,
+                        checks,
+                        rowValues,
+                        maintenanceComment,
+                        selectedExtraWorkIds,
+                        performedBy,
+                      });
                     }}
                     size="large"
                     sx={{ borderRadius: 2 }}

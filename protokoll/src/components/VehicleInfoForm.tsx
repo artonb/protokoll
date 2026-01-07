@@ -20,6 +20,7 @@ export default function VehicleInfoForm({ value, onChange }: Props) {
         {...s.vehicleFieldProps}
         label="Ordernr"
         value={value.orderNr ?? ""}
+        inputProps={{ readOnly: true }}
         onChange={(e) => onChange({ ...value, orderNr: e.target.value })}
       />
 
