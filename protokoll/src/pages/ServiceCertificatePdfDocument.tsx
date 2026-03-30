@@ -157,7 +157,18 @@ export default function ServiceCertificatePdfDocument({
               <Text style={styles.cellLabel}>Ordernummer</Text>
               <Text style={styles.cellValue}>{h.orderNr ?? ""}</Text>
             </View>
-
+            <View style={styles.row}>
+              <Text
+                style={{
+                  width: 220,
+                  paddingLeft: 11,
+                  fontSize: 8,
+                  lineHeight: 1.6,
+                }}
+              >
+                {data.note?.trim() || " "}
+              </Text>
+            </View>
             <View style={styles.extrasRow}>
               <Text style={styles.extrasLabel}>Utförda tilläggsarbeten</Text>
               <View style={styles.extrasList}>

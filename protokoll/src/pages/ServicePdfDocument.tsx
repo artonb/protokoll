@@ -665,10 +665,6 @@ export default function ServicePdfDocument({ data }: { data: PdfData }) {
             <Text style={{ fontSize: 10, fontWeight: "bold", marginBottom: 3 }}>
               Underhållskommentar
             </Text>
-
-            <Text style={{ fontSize: 10, minHeight: 60 }}>
-              {data.note?.trim() || " "}
-            </Text>
           </View>
         </View>
 
