@@ -19,6 +19,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
@@ -35,7 +36,9 @@ const MAX_W = 1250;
 function useActiveTab() {
   const { pathname } = useLocation();
   if (pathname.startsWith("/protocols")) return "protocols";
-  return "form";
+  if (pathname.startsWith("/service")) return "form";
+  if (pathname === "/") return "home";
+  return "";
 }
 
 function initials(email?: string | null) {
@@ -147,6 +150,20 @@ export default function AppNavbar() {
                   <Button
                     component={NavLink}
                     to="/"
+                    startIcon={<HomeRoundedIcon />}
+                    variant={active === "home" ? "contained" : "text"}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 2,
+                      color: "black",
+                    }}
+                  >
+                    Hem
+                  </Button>
+
+                  <Button
+                    component={NavLink}
+                    to="/service"
                     startIcon={<DescriptionRoundedIcon />}
                     variant={active === "form" ? "contained" : "text"}
                     sx={{
@@ -246,6 +263,19 @@ export default function AppNavbar() {
                         onClick={() => {
                           closeAllMenus();
                           navigate("/");
+                        }}
+                      >
+                        <HomeRoundedIcon
+                          fontSize="small"
+                          style={{ marginRight: 10 }}
+                        />
+                        Hem
+                      </MenuItem>
+
+                      <MenuItem
+                        onClick={() => {
+                          closeAllMenus();
+                          navigate("/service");
                         }}
                       >
                         <DescriptionRoundedIcon

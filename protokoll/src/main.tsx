@@ -7,6 +7,7 @@ import ServiceFormPage from "./pages/ServiceFormPage";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { AuthProvider } from "./auth/AuthProvider";
 import ProtocolsListPage from "./pages/ProtocolsListPage";
+import DashboardPage from "./pages/DashboardPage";
 import { RequireAuth } from "./auth/RequireAuth";
 import LoginPage from "./pages/LoginPage";
 import AppLayout from "./components/AppLayout";
@@ -29,6 +30,16 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RequireAuth>
                 <AppLayout>
+                  <DashboardPage />
+                </AppLayout>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/service"
+            element={
+              <RequireAuth>
+                <AppLayout>
                   <ServiceFormPage />
                 </AppLayout>
               </RequireAuth>
@@ -47,5 +58,5 @@ createRoot(document.getElementById("root")!).render(
         </Routes>
       </HashRouter>
     </AuthProvider>
-  </ThemeProvider>
+  </ThemeProvider>,
 );

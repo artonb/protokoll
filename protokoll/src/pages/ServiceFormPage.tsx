@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -14,6 +14,7 @@ import {
   TextField,
 } from "@mui/material";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
+import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import ServicePdfDocument, { type PdfData } from "./ServicePdfDocument";
@@ -34,6 +35,7 @@ import {
   getOrCreateOrderNrForServiceEvent,
   peekNextOrderNrForUser,
 } from "../service/orderNrStore";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const initialHeader: HeaderState = {
   orderNr: "",
@@ -65,23 +67,53 @@ const BRANDS: { id: Brand; label: string }[] = [
   { id: "skoda", label: "Skoda" },
 ];
 
+export type EditData = {
+  templateId: string;
+  brand: Brand;
+  header: HeaderState;
+  checks: Record<string, CheckState>;
+  rowValues: Record<string, string>;
+  maintenanceComment: string;
+  selectedExtraWorkIds: string[];
+  performedBy?: { name: string; address1: string; address2: string };
+};
+
 export default function ServiceFormPage() {
   const { user } = useAuth();
-  const [templateId, setTemplateId] = useState<string>(TEMPLATES[0]!.id);
-  const [selectedExtraWorkIds, setSelectedExtraWorkIds] = useState<string[]>(
-    []
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const editData = (location.state as { edit?: EditData } | null)?.edit;
+  const isEditLoad = useRef(Boolean(editData));
+
+  const [templateId, setTemplateId] = useState<string>(
+    editData?.templateId ?? TEMPLATES[0]!.id,
   );
-  const [checks, setChecks] = useState<Record<string, CheckState>>({});
-  const [rowValues, setRowValues] = useState<Record<string, string>>({});
-  const [header, setHeader] = useState<HeaderState>(initialHeader);
+  const [selectedExtraWorkIds, setSelectedExtraWorkIds] = useState<string[]>(
+    editData?.selectedExtraWorkIds ?? [],
+  );
+  const [checks, setChecks] = useState<Record<string, CheckState>>(
+    editData?.checks ?? {},
+  );
+  const [rowValues, setRowValues] = useState<Record<string, string>>(
+    editData?.rowValues ?? {},
+  );
+  const [header, setHeader] = useState<HeaderState>(
+    editData?.header ?? initialHeader,
+  );
   const [isDownloading, setIsDownloading] = useState(false);
-  const [maintenanceComment, setMaintenanceComment] = useState<string>("");
-  const [brand, setBrand] = useState<Brand>("volkswagen");
-  const [performedBy, setPerformedBy] = useState(DEFAULT_PERFORMED_BY);
+  const [isSaving, setIsSaving] = useState(false);
+  const [maintenanceComment, setMaintenanceComment] = useState<string>(
+    editData?.maintenanceComment ?? "",
+  );
+  const [brand, setBrand] = useState<Brand>(editData?.brand ?? "volkswagen");
+  const [performedBy, setPerformedBy] = useState(
+    editData?.performedBy ?? DEFAULT_PERFORMED_BY,
+  );
 
   const template = useMemo(
     () => TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!,
-    [templateId]
+    [templateId],
   );
 
   const selectedExtraWorkLabels = useMemo(
@@ -90,7 +122,7 @@ export default function ServiceFormPage() {
         ?.filter((x) => selectedExtraWorkIds.includes(x.id))
         .map((x) => x.label)
         .filter((label): label is string => Boolean(label)) ?? [],
-    [template.extraWorks, selectedExtraWorkIds]
+    [template.extraWorks, selectedExtraWorkIds],
   );
 
   const certificateExtraWorkLabels = useMemo(
@@ -100,7 +132,7 @@ export default function ServiceFormPage() {
         .filter((x) => x.showOnCertificate !== false)
         .map((x) => x.label)
         .filter((label): label is string => Boolean(label)) ?? [],
-    [template.extraWorks, selectedExtraWorkIds]
+    [template.extraWorks, selectedExtraWorkIds],
   );
 
   useEffect(() => {
@@ -149,9 +181,9 @@ export default function ServiceFormPage() {
       buildEffectiveSections(
         template.sections,
         template.extraWorks,
-        selectedExtraWorkIds
+        selectedExtraWorkIds,
       ),
-    [template.sections, template.extraWorks, selectedExtraWorkIds]
+    [template.sections, template.extraWorks, selectedExtraWorkIds],
   );
 
   useEffect(() => {
@@ -203,6 +235,11 @@ export default function ServiceFormPage() {
   }
 
   useEffect(() => {
+    // Skip reset on initial mount when loading edit data
+    if (isEditLoad.current) {
+      isEditLoad.current = false;
+      return;
+    }
     setSelectedExtraWorkIds([]);
     setMaintenanceComment("");
     setChecks(buildDefaultChecks(template.sections));
@@ -239,7 +276,7 @@ export default function ServiceFormPage() {
       maintenanceComment,
       template.extraWorks,
       selectedExtraWorkIds,
-    ]
+    ],
   );
 
   const canDownload = Boolean(header.regNr?.trim()) && !isDownloading;
@@ -262,7 +299,7 @@ export default function ServiceFormPage() {
             extraWorkLabels: selectedExtraWorkLabels,
           }}
         />,
-        protocolFilename
+        protocolFilename,
       );
 
       await upsertServiceEventDocument({
@@ -282,6 +319,39 @@ export default function ServiceFormPage() {
       });
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  async function onSave() {
+    if (!user) return;
+
+    try {
+      setIsSaving(true);
+      const { date, regNr, regNrNorm } = buildMeta();
+      const orderNr = await ensureOrderNrLocked(date, regNrNorm);
+      const headerWithOrder = { ...header, orderNr };
+
+      const base = {
+        uid: user.uid,
+        regNr,
+        regNrNorm,
+        templateId: template.id,
+        brand,
+        date,
+        header: headerWithOrder,
+        checks,
+        rowValues,
+        maintenanceComment,
+        selectedExtraWorkIds,
+        performedBy,
+      };
+
+      await upsertServiceEventDocument({ ...base, docType: "protocol" });
+      await upsertServiceEventDocument({ ...base, docType: "certificate" });
+
+      navigate("/protocols");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -482,7 +552,7 @@ export default function ServiceFormPage() {
 
                       const orderNr = await ensureOrderNrLocked(
                         date,
-                        regNrNorm
+                        regNrNorm,
                       );
                       const headerWithOrder = { ...header, orderNr };
 
@@ -494,7 +564,7 @@ export default function ServiceFormPage() {
                             extraWorkLabels: certificateExtraWorkLabels,
                           }}
                         />,
-                        certificateFilename
+                        certificateFilename,
                       );
 
                       await upsertServiceEventDocument({
@@ -518,6 +588,20 @@ export default function ServiceFormPage() {
                   >
                     Ladda ner Servicebevis
                   </Button>
+
+                  {editData && (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      onClick={onSave}
+                      disabled={!canDownload || isSaving}
+                      startIcon={<SaveRoundedIcon />}
+                      size="large"
+                      sx={{ borderRadius: 2 }}
+                    >
+                      {isSaving ? "Sparar..." : "Spara"}
+                    </Button>
+                  )}
 
                   {!header.regNr?.trim() && (
                     <Typography

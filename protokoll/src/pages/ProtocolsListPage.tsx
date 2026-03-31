@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import { useAuth } from "../auth/AuthProvider";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -123,7 +124,7 @@ export default function ProtocolsListPage() {
       } else {
         existing.createdAtSort = Math.max(
           existing.createdAtSort,
-          createdAtSort
+          createdAtSort,
         );
         existing.docs[d.docType] = d;
 
@@ -136,7 +137,7 @@ export default function ProtocolsListPage() {
     }
 
     return Array.from(map.values()).sort(
-      (a, b) => b.createdAtSort - a.createdAtSort
+      (a, b) => b.createdAtSort - a.createdAtSort,
     );
   }, [filtered]);
 
@@ -178,9 +179,11 @@ export default function ProtocolsListPage() {
 }
 
 function EventCard({ g }: { g: ServiceEventGroup }) {
+  const navigate = useNavigate();
+
   const template = useMemo(
     () => TEMPLATES.find((t) => t.id === g.templateId) ?? TEMPLATES[0]!,
-    [g.templateId]
+    [g.templateId],
   );
 
   const effectiveSections = useMemo(
@@ -188,9 +191,9 @@ function EventCard({ g }: { g: ServiceEventGroup }) {
       buildEffectiveSections(
         template.sections,
         template.extraWorks,
-        g.selectedExtraWorkIds
+        g.selectedExtraWorkIds,
       ),
-    [template, g.selectedExtraWorkIds]
+    [template, g.selectedExtraWorkIds],
   );
 
   const extraLabels = useMemo(() => {
@@ -241,7 +244,7 @@ function EventCard({ g }: { g: ServiceEventGroup }) {
         <ServiceCertificatePdfDocument
           data={{ ...basePdfData, extraWorkLabels: certificateLabels }}
         />,
-        filename
+        filename,
       );
     }
   }
@@ -253,11 +256,28 @@ function EventCard({ g }: { g: ServiceEventGroup }) {
     const ok = window.confirm(
       `Ta bort ${
         docType === "protocol" ? "serviceprotokoll" : "servicebevis"
-      } för ${g.regNr}?`
+      } för ${g.regNr}?`,
     );
     if (!ok) return;
 
     await deleteDocumentById(doc.id);
+  }
+
+  function onEdit() {
+    navigate("/service", {
+      state: {
+        edit: {
+          templateId: g.templateId,
+          brand: g.brand,
+          header: g.header,
+          checks: g.checks,
+          rowValues: g.rowValues,
+          maintenanceComment: g.maintenanceComment,
+          selectedExtraWorkIds: g.selectedExtraWorkIds,
+          performedBy: g.performedBy,
+        },
+      },
+    });
   }
 
   return (
@@ -272,6 +292,7 @@ function EventCard({ g }: { g: ServiceEventGroup }) {
             direction={{ xs: "column", sm: "row" }}
             spacing={0.5}
             justifyContent="space-between"
+            alignItems={{ sm: "center" }}
           >
             <Typography variant="h6" fontWeight={800}>
               {g.regNr}
@@ -280,9 +301,20 @@ function EventCard({ g }: { g: ServiceEventGroup }) {
               {template.serviceTitle}
             </Typography>
 
-            <Typography variant="body2" color="text.secondary">
-              {g.date}
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                {g.date}
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<EditRoundedIcon />}
+                onClick={onEdit}
+                sx={{ borderRadius: 2, textTransform: "none" }}
+              >
+                Redigera
+              </Button>
+            </Stack>
           </Stack>
 
           <Divider />
